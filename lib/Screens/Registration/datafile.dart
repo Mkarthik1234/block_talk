@@ -1,0 +1,10 @@
+List<String>bgList=[
+  "Assets/Images/bg1.jpeg",
+  "Assets/Images/bg2.jpeg",
+  "Assets/Images/bg3.jpeg",
+  "Assets/Images/bg4.webp",
+  "Assets/Images/bg5.jpeg",
+  "Assets/Images/bg6.jpeg",
+  "Assets/Images/bg7.jpg",
+  "Assets/Images/bg8.jpeg",
+];
