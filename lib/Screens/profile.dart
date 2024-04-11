@@ -14,7 +14,7 @@ class Profile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
             decoration: BoxDecoration(
-                color: Colors.grey[700],
+              color: Colors.black,
                 borderRadius: BorderRadius.circular(15)),
             child: Column(
               mainAxisSize: MainAxisSize.min,

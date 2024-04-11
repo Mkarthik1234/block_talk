@@ -1,5 +1,8 @@
 import 'package:block_talk_v3/Blockchain/connect.dart';
+import 'package:block_talk_v3/Screens/HomeScreen.dart';
+import 'package:block_talk_v3/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_web3/flutter_web3.dart';
 import '../theme.dart';
 import 'package:block_talk_v3/Modals/User.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,7 +11,8 @@ import 'package:block_talk_v3/Screens/new_chat.dart';
 
 class SideBar extends StatefulWidget {
   Function(bool,User) function;
-  SideBar({required this.function,super.key});
+  String useraddress,username;
+  SideBar({required this.username,required this.useraddress,required this.function,super.key});
 
   @override
   State<SideBar> createState() => _SideBarState();
@@ -32,6 +36,7 @@ class _SideBarState extends State<SideBar> {
   void initState() {
     super.initState();
     initializeData();
+    checkFriendAdded(context);
   }
 
   Future<void> initializeData() async {
@@ -92,6 +97,27 @@ class _SideBarState extends State<SideBar> {
     return [];
   }
 
+  Future<void> checkFriendAdded(BuildContext contex) async {
+    Contract? contract;
+    final abistringfile = await DefaultAssetBundle.of(contex)
+        .loadString("build/contracts/Chat.json");
+    final abijson = jsonDecode(abistringfile);
+    final abi = jsonEncode(abijson["abi"]);
+
+    final contractAddress = "0xFB1103A41509d54C37a3fFf6bf198EC3ff443859";
+    print("Contract address is $contractAddress");
+    contract = Contract(contractAddress, abi, provider!.getSigner());
+    final filter = contract!.getFilter('FriendAdded');
+    print("listening for friendAdded event");
+    contract!.on(filter, (event, dynamic c) {
+      print("Friend added $event");
+      if (event.toString() == widget.useraddress) {
+        HomeScreen(username: widget.username, useraddress: widget.useraddress);
+      }
+    });
+    print("Listening for 'MessageSent' event...");
+  }
+
   @override
   Widget build(BuildContext context) {
     double h = MediaQuery.of(context).size.height;
@@ -148,7 +174,7 @@ class _SideBarState extends State<SideBar> {
           ),
           GestureDetector(
             onTap: (){
-              showDialog(context: context, builder: (context)=>UserList(refreshpage));
+              showDialog(context: context, builder: (context)=>UserList(widget.function(true,User(name:widget.username,accountAddress: widget.useraddress))));
             },
             child: Container(
               width: w / 6,

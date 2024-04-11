@@ -12,6 +12,9 @@ import 'textutils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_web3/flutter_web3.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:block_talk_v3/Modals/User.dart';
 
 class RegisterScreen extends StatefulWidget {
   late String user_address;
@@ -30,6 +33,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   TextEditingController usernamecontroller = new TextEditingController();
   TextEditingController addresscontroller = new TextEditingController();
 
+  Future<List<String>> fetchUsers(BuildContext context) async {
+    print("HIIIIIIIIIIIIIIII");
+    Connector h = Connector();
+    List<dynamic> userdata = await h.getcontract(context, "getAllAppUser", []);
+    List<List<dynamic>> userList = userdata.cast<List<dynamic>>();
+
+    List<String> users = userList.map((data) {
+      return data[0].toString().toLowerCase();
+    }).toList();
+
+    return users;
+  }
+
   @override
   Widget build(BuildContext context) {
     addresscontroller.text = widget.user_address;
@@ -45,71 +61,71 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(
                 child: showOption
                     ? ShowUpAnimation(
-                  delay: 100,
-                  child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: bgList.length,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedIndex = index;
-                            });
-                          },
-                          child: CircleAvatar(
-                            radius: 30,
-                            backgroundColor: selectedIndex == index
-                                ? Colors.white
-                                : Colors.transparent,
-                            child: Padding(
-                              padding: const EdgeInsets.all(1),
-                              child: CircleAvatar(
-                                radius: 30,
-                                backgroundImage: AssetImage(
-                                  bgList[index],
+                        delay: 100,
+                        child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: bgList.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) {
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedIndex = index;
+                                  });
+                                },
+                                child: CircleAvatar(
+                                  radius: 30,
+                                  backgroundColor: selectedIndex == index
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(1),
+                                    child: CircleAvatar(
+                                      radius: 30,
+                                      backgroundImage: AssetImage(
+                                        bgList[index],
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                )
+                              );
+                            }),
+                      )
                     : const SizedBox()),
             const SizedBox(
               width: 20,
             ),
             showOption
                 ? GestureDetector(
-                onTap: () {
-                  setState(() {
-                    showOption = false;
-                  });
-                },
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 30,
-                ))
+                    onTap: () {
+                      setState(() {
+                        showOption = false;
+                      });
+                    },
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 30,
+                    ))
                 : GestureDetector(
-              onTap: () {
-                setState(() {
-                  showOption = true;
-                });
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(1),
-                  child: CircleAvatar(
-                    radius: 30,
-                    backgroundImage: AssetImage(
-                      bgList[selectedIndex],
+                    onTap: () {
+                      setState(() {
+                        showOption = true;
+                      });
+                    },
+                    child: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: Padding(
+                        padding: const EdgeInsets.all(1),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundImage: AssetImage(
+                            bgList[selectedIndex],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
-            )
+                  )
           ],
         ),
       ),
@@ -143,10 +159,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const Spacer(),
                       Center(
                           child: TextUtil(
-                            text: "Sign up",
-                            weight: true,
-                            size: 30,
-                          )),
+                        text: "Sign up",
+                        weight: true,
+                        size: 30,
+                      )),
                       const Spacer(),
                       TextUtil(
                         text: "Username",
@@ -179,6 +195,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             border: Border(
                                 bottom: BorderSide(color: Colors.white))),
                         child: TextFormField(
+                          readOnly: true,
                           controller: addresscontroller,
                           style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
@@ -195,32 +212,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       GestureDetector(
                         onTap: () async {
                           Connector h = Connector();
+                          bool UsernameExists = false;
                           print(
                               "[registration] User address is ${widget.user_address}");
+                          List<String> res =
+                              await fetchUsers(context);
+                          print("[registration page] res is $res");
+                          if(res.contains(usernamecontroller.text.toLowerCase())){
+                            print("username exists");
+                            UsernameExists = true;
+                          }
                           if (usernamecontroller.text.isNotEmpty &&
-                              addresscontroller.text.isNotEmpty) {
-                            await h.getcontract(context, "createAccount",
-                                [usernamecontroller.text]);
-                            checkuseradded(context,addresscontroller.text);
-                          } else {
+                              addresscontroller.text.isNotEmpty &&
+                              !UsernameExists) {
                             showDialog(
                               context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text('Error'),
-                                  content: const Text(
-                                      'Please fill in both the username and public key fields.'),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('OK'),
+                              barrierDismissible: false,
+                              // Prevent dismissing dialog by tapping outside
+                              builder: (BuildContext context) {
+                                return Dialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                  elevation: 0.0,
+                                  backgroundColor: Colors.transparent,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(20.0),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10.0),
                                     ),
-                                  ],
+                                    child: const Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        CircularProgressIndicator(),
+                                        SizedBox(height: 20.0),
+                                        Text(
+                                          "Processing...",
+                                          style: TextStyle(
+                                            fontSize: 18.0,
+                                            color: Colors.black,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 );
                               },
                             );
+                            await h.getcontract(context, "createAccount",
+                                [usernamecontroller.text]);
+
+                            SharedPreferences preference;
+                            preference = await SharedPreferences.getInstance();
+                            preference.setBool("RegistrationPreviouspage", true);
+
+                            checkuseradded(context, addresscontroller.text);
+                          } else if (usernamecontroller.text.isEmpty ||
+                              addresscontroller.text.isEmpty) {
+                            ErrorMessage(context,
+                                "Please fill in both the username and public key fields.");
+                          } else if (UsernameExists == true) {
+                            ErrorMessage(context, "Username already taken.");
                           }
                         },
                         child: Container(
@@ -245,29 +299,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
+
+  Future<dynamic> ErrorMessage(BuildContext context, String message) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
-
-Future<void> checkuseradded(BuildContext contex,String address) async {
+Future<void> checkuseradded(BuildContext contex, String address) async {
   Contract? contract;
-  final abistringfile = await DefaultAssetBundle.of(contex).loadString("build/contracts/Chat.json");
+  final abistringfile = await DefaultAssetBundle.of(contex)
+      .loadString("build/contracts/Chat.json");
   final abijson = jsonDecode(abistringfile);
   final abi = jsonEncode(abijson["abi"]);
 
-  final contractAddress = "0xFB1103A41509d54C37a3fFf6bf198EC3ff443859";
+  final contractAddress = "0xbD58270A35A26092602027946ACC1d4b875456b5";
   print("Contract address is $contractAddress");
-
 
   if (provider != null) {
     try {
       contract = Contract(contractAddress, abi, provider!.getSigner());
       final filter = contract!.getFilter('UserAdded');
-      contract!.on(filter, (event,dynamic c) {
-        print("User Added: ${event.toString().toLowerCase()} and address is ${address.toLowerCase()}");
-        if(event.toString().toLowerCase() == address.toLowerCase()){
+      contract!.on(filter, (event, dynamic c) {
+        print(
+            "User Added: ${event.toString().toLowerCase()} and address is ${address.toLowerCase()}");
+        if (event.toString().toLowerCase() == address.toLowerCase()) {
           Navigator.push(
             contex,
-            MaterialPageRoute(builder: (context) => MyApp()), // Replace MyApp with the desired page widget
+            MaterialPageRoute(
+                builder: (context) =>
+                    MyApp()), // Replace MyApp with the desired page widget
           );
         }
       });
